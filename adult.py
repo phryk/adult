@@ -79,6 +79,8 @@ class RecurringTask(poobrains.commenting.Commentable):
     @classmethod
     def get_new_tasks(cls):
 
+        """ THIS IS BULLSHIT? """
+
         now = datetime.datetime.now()
         return cls.select().where(
             cls.latest_task.is_null() |
@@ -104,13 +106,32 @@ def create_recurring():
 
         base_date = tpl.latest_task.created if tpl.latest_task is None else tpl.created
 
-        next_date = {}
+        year_changed = now.year > base_date.year
+        month_changed = year_changed or now.month > base_date.month
+        week_changed = month_changed or now.isocalendar()[1] > base_date.isocalendar()[1]
+        day_changed = week_changed or month_changed or now.day > base_date.day
+        hour_changed = day_changed or now.hour > base_date.hour
+        minute_changed = hour_changed or now.minute > base_date.minute
 
-        if not tpl.year is None:
-            next_date['year'] = tpl.year
+        #below_year_changed = month_changed or week_changed or day_changed or hour_changed or minute_changed
+        #below_month_changed = week_changed or day_changed or hour_changed or minute_changed
 
-        if not tpl.month is None:
-            next_date['month'] = tpl.month
+        years = []
+        for year in range(base_date.year, now.year + 1):
+            if not template.year or template.year == year:
+                years.append(year)
+
+        months = collections.OrderedDict()
+        for year in years:
+
+            months[year] = []
+            # Determine whether this is the first, last (or neither) year of the range
+            first_year = year == years[0]
+            last_year = year == years[-1]
+
+            if template.month:
+                months.[year]append('%d-%d' % year, template.month)
+
 
 if __name__ == '__main__':
     app.cli()
