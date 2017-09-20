@@ -19,13 +19,13 @@ class Task(poobrains.commenting.Commentable):
     created = poobrains.storage.fields.DateTimeField(default=datetime.datetime.now)
     title = poobrains.storage.fields.CharField()
     priority = poobrains.storage.fields.IntegerField(null=True, choices=[
-                                                                            (None, 'None'),
-                                                                            (-2, 'Very low'),
-                                                                            (-1, 'Low'),
-                                                                            (0, 'Normal'),
-                                                                            (1, 'High'),
-                                                                            (2, 'VERY HIGH')
-                                                                        ])
+        (None, 'None'),
+        (-2, 'Very low'),
+        (-1, 'Low'),
+        (0, 'Normal'),
+        (1, 'High'),
+        (2, 'VERY HIGH')
+    ])
     deadline = poobrains.storage.fields.DateTimeField(default=tomorrow, null=True)
     description = poobrains.md.MarkdownField()
 
@@ -59,6 +59,7 @@ class RecurringTask(poobrains.commenting.Commentable):
         (12, 'December')
     ])
     #TODO: week of month (1-6?)
+    week_month = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(1,7)])
     day_month = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(1,32)])
     day_week = poobrains.storage.fields.IntegerField(null=True, choices=[
         (None, 'Any'),
@@ -76,28 +77,37 @@ class RecurringTask(poobrains.commenting.Commentable):
     latest_task = poobrains.storage.fields.ForeignKeyField(Task, null=True)
 
 
-    @classmethod
-    def get_new_tasks(cls):
+#    @classmethod
+#    def get_new_tasks(cls):
+#
+#        """ THIS IS BULLSHIT? """
+#
+#        now = datetime.datetime.now()
+#        return cls.select().where(
+#            cls.latest_task.is_null() |
+#
+#            (
+#
+#                (cls.year.is_null(False) & cls.year <= now.year ) &
+#                (cls.month.is_null(False) | cls.month <= now.month) &
+#                (cls.day_month.is_null(False) | cls.day_month <= now.day) &
+#                (cls.day_week.is_null(False) | cls.day_week <= now.isoweekday()) &
+#                (cls.hour.is_null(False) | cls.hour <= now.hour) &
+#                (cls.minute.is_null(False) | cls.minute <= now.minute)
+#            )
+#        )
 
-        """ THIS IS BULLSHIT? """
 
-        now = datetime.datetime.now()
-        return cls.select().where(
-            cls.latest_task.is_null() |
+class Reward(poobrains.commenting.Commentable):
 
-            (
-
-                (cls.year.is_null(False) & cls.year <= now.year ) &
-                (cls.month.is_null(False) | cls.month <= now.month) &
-                (cls.day_month.is_null(False) | cls.day_month <= now.day) &
-                (cls.day_week.is_null(False) | cls.day_week <= now.isoweekday()) &
-                (cls.hour.is_null(False) | cls.hour <= now.hour) &
-                (cls.minute.is_null(False) | cls.minute <= now.minute)
-            )
-        )
+    title = poobrains.storage.fields.CharField()
+    description = poobrains.md.MarkdownField(null=True)
 
 @app.cron
 def create_recurring():
+
+    if app.config['DEBUG']:
+        app.debugger.set_trace()
 
     now = datetime.datetime.now()
     dated_tasks = collections.OrderedDict()
@@ -116,21 +126,35 @@ def create_recurring():
         #below_year_changed = month_changed or week_changed or day_changed or hour_changed or minute_changed
         #below_month_changed = week_changed or day_changed or hour_changed or minute_changed
 
-        years = []
+        dates = collections.OrderedDict()
         for year in range(base_date.year, now.year + 1):
             if not template.year or template.year == year:
-                years.append(year)
+                dates[year] = collections.OrderedDict()
 
         months = collections.OrderedDict()
-        for year in years:
+        for year, months in dates.iteritems():
 
-            months[year] = []
             # Determine whether this is the first, last (or neither) year of the range
             first_year = year == years[0]
             last_year = year == years[-1]
 
             if template.month:
-                months.[year]append('%d-%d' % year, template.month)
+                #month_date = datetime.datetime(year=year, month=template.month, day=1)
+
+                 if (first_year and 
+                        (template.month >= base_date.month and 
+                            (not last_year or template.month <= now.month))) or\
+                    (not first_year and not last_year) or\
+                    (last_year and
+                        (template.month <= now.month and
+                            (not first_year or template.month >= base_date.month))):
+
+                        dates[year][template.month] = collections.OrderedDict()
+
+
+
+
+        #for year, months in dates:
 
 
 if __name__ == '__main__':
