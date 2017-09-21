@@ -141,16 +141,39 @@ def create_recurring():
             if template.month:
                 #month_date = datetime.datetime(year=year, month=template.month, day=1)
 
-                 if (first_year and 
-                        (template.month >= base_date.month and 
-                            (not last_year or template.month <= now.month))) or\
-                    (not first_year and not last_year) or\
-                    (last_year and
-                        (template.month <= now.month and
-                            (not first_year or template.month >= base_date.month))):
+                first_year_valid = first year and template.month >= base_date.month
+                middle_year_valid = not first_year and not last_year
+                last_year_valid = last_year and (template.month <= now.month and (not first_year or template.month >= base_date.month))
+
+                #if (first_year and 
+                #        (template.month >= base_date.month and 
+                #            (not last_year or template.month <= now.month))) or\
+                #    (not first_year and not last_year) or\
+                #    (last_year and
+                #        (template.month <= now.month and
+                #            (not first_year or template.month >= base_date.month))):
+
+                if first_year_valid or middle_year_valid or last_year_valid:
 
                         dates[year][template.month] = collections.OrderedDict()
 
+
+            else:
+                #
+                if first_year and last_year:
+                    months = range(base_date.month, now.month + 1):
+
+                elif first_year:
+                    months = range(base_date.month, 13)
+
+                elif last_year:
+                    months = range(1, now.month + 1)
+
+                else:
+                    months = range(1, 13)
+
+                for month in months:
+                    dates[year][month] = collections.OrderedDict()
 
 
 
