@@ -127,39 +127,30 @@ def create_recurring():
         #below_month_changed = week_changed or day_changed or hour_changed or minute_changed
 
         dates = collections.OrderedDict()
+
+        # add years
         for year in range(base_date.year, now.year + 1):
             if not template.year or template.year == year:
                 dates[year] = collections.OrderedDict()
 
-        months = collections.OrderedDict()
-        for year, months in dates.iteritems():
+        # add months
+        for year, _ in dates.iteritems():
 
             # Determine whether this is the first, last (or neither) year of the range
-            first_year = year == years[0]
-            last_year = year == years[-1]
+            first_year = year == dates.keys()[0]
+            last_year = year == dates.keys()[-1]
 
             if template.month:
-                #month_date = datetime.datetime(year=year, month=template.month, day=1)
 
                 first_year_valid = first year and template.month >= base_date.month
                 middle_year_valid = not first_year and not last_year
                 last_year_valid = last_year and (template.month <= now.month and (not first_year or template.month >= base_date.month))
 
-                #if (first_year and 
-                #        (template.month >= base_date.month and 
-                #            (not last_year or template.month <= now.month))) or\
-                #    (not first_year and not last_year) or\
-                #    (last_year and
-                #        (template.month <= now.month and
-                #            (not first_year or template.month >= base_date.month))):
-
                 if first_year_valid or middle_year_valid or last_year_valid:
-
                         dates[year][template.month] = collections.OrderedDict()
 
-
             else:
-                #
+
                 if first_year and last_year:
                     months = range(base_date.month, now.month + 1):
 
@@ -176,8 +167,43 @@ def create_recurring():
                     dates[year][month] = collections.OrderedDict()
 
 
+        # add days
+        for year, months in dates.iteritems():
 
-        #for year, months in dates:
+            first_year = year == dates.keys()[0]
+            last_year = year == dates.keys()[-1]
+
+            for month, _ in months.iteritems():
+
+                first_month = first_year and month == basedate.month
+                last_month = last_year and month == now.month 
+
+                if template.day_month:
+
+                    first_year_valid = first_year and month <= base_date.month
+                    middle_year_valid = not first_year and not last_year
+                    last_year_valid = last_year and month >= now.month
+                    day_week_valid = not template.day_week or datetime.datetime(year, month, template.day).isoweekday == template.day_week - 1
+                
+                    if (first_year_valid or middle_year_valid or last_year_valid) and day_week_valid:
+                        dates[year][month][template.day_month] = collections.OrderedDict()
+
+                else:
+
+                    if first_month and last_month:
+                        days = range(base_date.day, now.day + 1)
+
+                    elif first_month:
+                        days = range(base_date.day, calendar.monthrange(year, month)[1] + 1)
+
+                    elif last_month:
+                        days = range(1, now.day + 1)
+
+                    for day in days:
+                    
+                        if not template.day_week or datetime.datetime(year, month, day).isoweekday == template.day_week - 1:
+                            dates[year][month][day] = collections.OrderedDict()
+
 
 
 if __name__ == '__main__':
