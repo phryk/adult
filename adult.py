@@ -5,6 +5,7 @@
 
 import datetime
 import collections
+import click
 import poobrains
 
 app = poobrains.app
@@ -15,6 +16,9 @@ def tomorrow():
 
 
 class Task(poobrains.commenting.Commentable):
+
+    class Meta:
+        order_by = ('-created', '-priority', 'checkdate')
 
     created = poobrains.storage.fields.DateTimeField(default=datetime.datetime.now)
     title = poobrains.storage.fields.CharField()
@@ -115,7 +119,10 @@ def create_recurring():
 
     for template in RecurringTask.select():
 
-        base_date = tpl.latest_task.created if tpl.latest_task is None else tpl.created
+        try:
+            base_date = template.latest_task.created
+        except Task.DoesNotExist:
+            base_date = template.created
 
         #year_changed = now.year > base_date.year
         #month_changed = year_changed or now.month > base_date.month
@@ -257,7 +264,7 @@ def create_recurring():
                             valid = True
 
                         if valid:
-                            dates[year][month][day][hour] = collections.OrderedDict()
+                            dates[year][month][day][template.hour] = collections.OrderedDict()
 
                     else:
 
@@ -316,6 +323,15 @@ def create_recurring():
                             if first_hour and last_hour:
                                 for minute in range(base_date.minute + 1, now.minute + 1):
                                     task_dates.append(datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute))
+                            elif first_hour:
+                                for minute in range(base_date.minute + 1, 60):
+                                    task_dates.append(datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute))
+                            elif last_hour:
+                                for minute in range(0, now.minute + 1):
+                                    task_dates.append(datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute))
+                            else:
+                                for minute in range(0, 60):
+                                    task_dates.append(datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute))
 
 
         click.echo("Creating %d tasks for '%s'." % (len(task_dates), template.title))
@@ -324,16 +340,21 @@ def create_recurring():
             for date in proxy:
 
                 task = Task()
+                task.name = "%s-%d-%d-%d-%d-%d" % (template.name, date.year, date.month, date.day, date.hour, date.minute)
+                task.owner = template.owner
+                task.group = template.group
                 task.title = template.title
                 task.created = date
-                task.checkdate = date + datetime.timedelta(seconds=template.checkdate)
+                if template.checkdate:
+                    task.checkdate = date + datetime.timedelta(seconds=template.checkdate)
                 task.priority = template.priority
                 task.description = template.description
 
                 task.save(force_insert=True)
 
-        template.latest = task
-        template.save()
+        if len(task_dates):
+            template.latest_task = task
+            template.save()
 
 if __name__ == '__main__':
     app.cli()
