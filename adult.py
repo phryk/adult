@@ -31,6 +31,16 @@ class Task(poobrains.commenting.Commentable):
         (1, 'High'),
         (2, 'VERY HIGH')
     ])
+    status = poobrains.storage.fields.CharField(choices=[
+        ('new', 'new'),
+        ('ongoing', 'ongoing'),
+        ('finished', 'finished'),
+        ('aborted', 'aborted')
+    ])
+    progress = poobrains.storage.fields.IntegerField(default=0, constraints=[
+        poobrains.storage.fields.Check('progress >= 0'),
+        poobrains.storage.fields.Check('progress <= 100')
+    ])
     description = poobrains.md.MarkdownField()
 
 
