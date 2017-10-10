@@ -142,7 +142,7 @@ def create_recurring():
 
             if template.month:
 
-                first_year_valid = first year and template.month >= base_date.month
+                first_year_valid = first_year and template.month >= base_date.month
                 middle_year_valid = not first_year and not last_year
                 last_year_valid = last_year and (template.month <= now.month and (not first_year or template.month >= base_date.month))
 
@@ -201,7 +201,9 @@ def create_recurring():
 
                     for day in days:
                     
-                        if not template.day_week or datetime.datetime(year, month, day).isoweekday == template.day_week - 1:
+                        dt = datetime.datetime(year=year, month=month, day=day)
+
+                        if not template.day_week or dt.isoweekday() == template.day_week:
                             dates[year][month][day] = collections.OrderedDict()
 
 
