@@ -15,10 +15,20 @@ def tomorrow():
     return datetime.datetime.now() + datetime.timedelta(days=1)
 
 
+class TaskForm(poobrains.form.AddForm):
+
+    def __init__(self, **kwargs):
+
+        super(TaskForm, self).__init__(**kwargs)
+        self.dependencies = poobrains.form.fields.MultiChoice(type=poobrains.form.types.StorableInstanceParamType(Task))
+
+
 class Task(poobrains.commenting.Commentable):
 
     class Meta:
         order_by = ('-created', '-priority', 'checkdate')
+
+    form_add = TaskForm
 
     created = poobrains.storage.fields.DateTimeField(default=datetime.datetime.now)
     title = poobrains.storage.fields.CharField()
@@ -73,7 +83,6 @@ class RecurringTask(poobrains.commenting.Commentable):
         (11, 'November'),
         (12, 'December')
     ])
-    #TODO: week of month (1-6?)
     weekday_month = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(1,7)])
     weekday = poobrains.storage.fields.IntegerField(null=True, choices=[
         (None, 'Any'),
@@ -111,6 +120,12 @@ class RecurringTask(poobrains.commenting.Commentable):
 #                (cls.minute.is_null(False) | cls.minute <= now.minute)
 #            )
 #        )
+
+
+class TaskDependency(poobrains.storage.Model):
+
+    task = poobrains.storage.fields.ForeignKeyField(Task, related_name='dependencies')
+    dependency = poobrains.storage.fields.ForeignKeyField(Task, related_name='provides', constraints=[poobrains.storage.fields.Check('dependency_id <> task_id')])
 
 
 class Reward(poobrains.commenting.Commentable):
