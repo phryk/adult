@@ -2,3 +2,12 @@ bin/
 include/
 lib/
 pip-selfcheck.json
+
+*.pyc
+*.db
+*.ini
+*.conf
+*.swp
+config.py
+gnupg/
+tls/

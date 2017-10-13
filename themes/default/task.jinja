@@ -1,0 +1,5 @@
+{% extends "commentable.jinja" %}
+
+{% block content %}{{ content.description.render() }}{% endblock %}
+
+{% block footer %}{{ content.created }}{{ super() }}{% endblock %}
