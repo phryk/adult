@@ -3,8 +3,10 @@
 
 """ How do I even adult? """
 
-import datetime
+import math
 import collections
+import datetime
+import calendar
 import click
 import poobrains
 
@@ -17,9 +19,9 @@ def tomorrow():
 
 class TaskForm(poobrains.form.AddForm):
 
-    def __init__(self, **kwargs):
+    def __init__(self, model_or_instance, **kwargs):
 
-        super(TaskForm, self).__init__(**kwargs)
+        super(TaskForm, self).__init__(model_or_instance, **kwargs)
         self.dependencies = poobrains.form.fields.MultiChoice(type=poobrains.form.types.StorableInstanceParamType(Task))
 
 
@@ -33,7 +35,7 @@ class Task(poobrains.commenting.Commentable):
     created = poobrains.storage.fields.DateTimeField(default=datetime.datetime.now)
     title = poobrains.storage.fields.CharField()
     checkdate = poobrains.storage.fields.DateTimeField(default=tomorrow, null=True)
-    priority = poobrains.storage.fields.IntegerField(null=True, choices=[
+    priority = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
         (None, 'None'),
         (-2, 'Very low'),
         (-1, 'Low'),
@@ -41,7 +43,7 @@ class Task(poobrains.commenting.Commentable):
         (1, 'High'),
         (2, 'VERY HIGH')
     ])
-    status = poobrains.storage.fields.CharField(choices=[
+    status = poobrains.storage.fields.CharField(default='new', form_widget=poobrains.form.fields.Select, choices=[
         ('new', 'new'),
         ('ongoing', 'ongoing'),
         ('finished', 'finished'),
@@ -59,7 +61,7 @@ class RecurringTask(poobrains.commenting.Commentable):
     created = poobrains.storage.fields.DateTimeField(default=datetime.datetime.now)
     title = poobrains.storage.fields.CharField()
     checkdate = poobrains.storage.fields.IntegerField(null=True, help_text='Time frame in seconds')
-    priority = poobrains.storage.fields.IntegerField(null=True, choices=[
+    priority = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
         (None, 'None'),
         (-2, 'Very low'),
         (-1, 'Low'),
@@ -68,7 +70,7 @@ class RecurringTask(poobrains.commenting.Commentable):
         (2, 'VERY HIGH')
     ])
     year = poobrains.storage.fields.IntegerField(null=True)
-    month = poobrains.storage.fields.IntegerField(null=True, choices=[
+    month = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
         (None, 'Any'),
         (1, 'January'),
         (2, 'February'),
@@ -83,8 +85,8 @@ class RecurringTask(poobrains.commenting.Commentable):
         (11, 'November'),
         (12, 'December')
     ])
-    weekday_month = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(1,7)])
-    weekday = poobrains.storage.fields.IntegerField(null=True, choices=[
+    weekday_month = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[(None, 'Any')] + [(x, x) for x in range(1,7)])
+    weekday = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
         (None, 'Any'),
         (1, 'Monday'),
         (2, 'Tuesday'),
@@ -94,32 +96,11 @@ class RecurringTask(poobrains.commenting.Commentable):
         (6, 'Saturday'),
         (7, 'Sunday')
     ])
-    day = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(1,32)])
-    hour = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(0,24)])
-    minute = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(0,60)])
+    day = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[(None, 'Any')] + [(x, x) for x in range(1,32)])
+    hour = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(0,24)], help_text='0-23')
+    minute = poobrains.storage.fields.IntegerField(null=True, choices=[(None, 'Any')] + [(x, x) for x in range(0,60)], help_text='0-59')
     description = poobrains.md.MarkdownField()
     latest_task = poobrains.storage.fields.ForeignKeyField(Task, null=True)
-
-
-#    @classmethod
-#    def get_new_tasks(cls):
-#
-#        """ THIS IS BULLSHIT? """
-#
-#        now = datetime.datetime.now()
-#        return cls.select().where(
-#            cls.latest_task.is_null() |
-#
-#            (
-#
-#                (cls.year.is_null(False) & cls.year <= now.year ) &
-#                (cls.month.is_null(False) | cls.month <= now.month) &
-#                (cls.day.is_null(False) | cls.day <= now.day) &
-#                (cls.weekday.is_null(False) | cls.weekday <= now.isoweekday()) &
-#                (cls.hour.is_null(False) | cls.hour <= now.hour) &
-#                (cls.minute.is_null(False) | cls.minute <= now.minute)
-#            )
-#        )
 
 
 class TaskDependency(poobrains.storage.Model):
@@ -145,19 +126,15 @@ def create_recurring():
     for template in RecurringTask.select():
 
         try:
-            base_date = template.latest_task.created
+
+            if template.latest_task:
+                base_date = template.latest_task.created
+            else: # for some reason this can be None without triggering Task.DoesNotExist
+                base_date = template.created
+
         except Task.DoesNotExist:
             base_date = template.created
 
-        #year_changed = now.year > base_date.year
-        #month_changed = year_changed or now.month > base_date.month
-        #week_changed = month_changed or now.isocalendar()[1] > base_date.isocalendar()[1]
-        #day_changed = week_changed or month_changed or now.day > base_date.day
-        #hour_changed = day_changed or now.hour > base_date.hour
-        #minute_changed = hour_changed or now.minute > base_date.minute
-
-        #below_year_changed = month_changed or week_changed or day_changed or hour_changed or minute_changed
-        #below_month_changed = week_changed or day_changed or hour_changed or minute_changed
 
         dates = collections.OrderedDict()
 
@@ -173,7 +150,7 @@ def create_recurring():
             first_year = year == dates.keys()[0]
             last_year = year == dates.keys()[-1]
 
-            if template.month:
+            if not template.month is None:
 
                 if first_year and last_year:
                     valid = template.month >= base_date.month and template.month <= now.month
@@ -217,7 +194,7 @@ def create_recurring():
                 first_month = first_year and month == base_date.month
                 last_month = last_year and month == now.month 
 
-                if template.day:
+                if not template.day is None:
 
                     #first_year_valid = first_year and month <= base_date.month
                     #middle_year_valid = not first_year and not last_year
@@ -250,17 +227,21 @@ def create_recurring():
                     elif last_month:
                         days = range(1, now.day + 1)
 
+                    else:
+                        days = range(1, 32) # days that don't exist are weeded out by trying to create a datetime from it
+
                     for day in days:
-                    
-                        dt = datetime.datetime(year=year, month=month, day=day)
+                   
+                        try:
+                            dt = datetime.datetime(year=year, month=month, day=day)
+                        except ValueError:
+                            continue # means we have an invalid date on our hands, skip to next iteration of the loop
 
-                        if not template.day_week or dt.isoweekday() == template.day_week:
+                        weekday_valid = not template.weekday or dt.isoweekday() == template.weekday
+                        weekday_month_valid = not template.weekday_month or math.ceil(day / 7) == template.weekday_month
 
-                            weekday_valid = not template.weekday or dt.isoweekday() == template.weekday
-                            weekday_month_valid = not template.weekday_month or ceil(day / 7) == template.weekday_month
-
-                            if weekday_valid and weekday_month_valid: 
-                                dates[year][month][day] = collections.OrderedDict()
+                        if weekday_valid and weekday_month_valid: 
+                            dates[year][month][day] = collections.OrderedDict()
 
 
         # add hours
@@ -279,7 +260,7 @@ def create_recurring():
                     first_day = first_month and day == base_date.day
                     last_day = last_month and day == now.day 
 
-                    if template.hour:
+                    if not template.hour is None:
 
                         if first_day and last_day:
                             valid = template.hour >= base_date.hour and template.hour <= now.hour
@@ -331,12 +312,12 @@ def create_recurring():
                         first_hour = first_day and hour == base_date.hour
                         last_hour = last_day and hour == now.hour
 
-                        if template.minute:
+                        if not template.minute is None:
 
                             if first_hour and last_hour:
-                                valid = template.minute >= base_date.minute and template.minute <= now.minute
+                                valid = template.minute > base_date.minute and template.minute <= now.minute
                             elif first_hour:
-                                valid = template.minute >= base_date.minute
+                                valid = template.minute > base_date.minute
                             elif last_hour:
                                 valid = template.minute <= now.minute
                             else:
@@ -370,6 +351,7 @@ def create_recurring():
                 task.name = "%s-%d-%d-%d-%d-%d" % (template.name, date.year, date.month, date.day, date.hour, date.minute)
                 task.owner = template.owner
                 task.group = template.group
+                task.status = 'new'
                 task.title = template.title
                 task.created = date
                 if template.checkdate:
