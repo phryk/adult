@@ -17,6 +17,19 @@ def tomorrow():
     return datetime.datetime.now() + datetime.timedelta(days=1)
 
 
+def firstweekday(weekday, first_day_of_month):
+
+    """ return day of month which is first occurence of weekday in a month beginning on weekday first_day_of_month. """
+
+    weekday = weekday - 1
+    first_day_of_month = first_day_of_month - 1
+
+    if first_day_of_month <= weekday:
+        return weekday - first_day_of_month + 1
+    elif first_day_of_month > weekday:
+        return weekday - first_day_of_month + 7 + 1
+
+
 class TaskForm(poobrains.form.AddForm):
 
     def __init__(self, model_or_instance, **kwargs):
@@ -117,9 +130,6 @@ class Reward(poobrains.commenting.Commentable):
 @app.cron
 def create_recurring():
 
-    if app.config['DEBUG']:
-        app.debugger.set_trace()
-
     now = datetime.datetime.now()
     dated_tasks = collections.OrderedDict()
 
@@ -194,6 +204,8 @@ def create_recurring():
                 first_month = first_year and month == base_date.month
                 last_month = last_year and month == now.month 
 
+                first_day_of_month = datetime.datetime(year=year, month=month, day=1)
+
                 if not template.day is None:
 
                     #first_year_valid = first_year and month <= base_date.month
@@ -211,6 +223,7 @@ def create_recurring():
                         valid = True
                     
                     valid = valid and (not template.weekday or datetime.datetime(year, month, template.day).isoweekday() == template.weekday) # check if the date has the correct weekday
+                    valid = valid and (not template.weekday_month or day == firstweekday(template.weekday, first_day_of_month.isoweekday()) + (7 * (template.weekday_month -1))) # check if date has correct'th number of weekday occurence in this month (2nd friday or whatev)
                 
                     #if (first_year_valid or middle_year_valid or last_year_valid) and weekday_valid:
                     if valid:
@@ -237,11 +250,16 @@ def create_recurring():
                         except ValueError:
                             continue # means we have an invalid date on our hands, skip to next iteration of the loop
 
-                        weekday_valid = not template.weekday or dt.isoweekday() == template.weekday
-                        weekday_month_valid = not template.weekday_month or math.ceil(day / 7) == template.weekday_month
+                        #weekday_distance = template.weekday - first_day_of_month.isoweekday()
 
-                        if weekday_valid and weekday_month_valid: 
-                            dates[year][month][day] = collections.OrderedDict()
+                        weekday_valid = not template.weekday or dt.isoweekday() == template.weekday
+
+                        if weekday_valid:
+                            #weekday_month_valid = not template.weekday_month or (day + weekday_distance) / 7.0 == template.weekday_month - 1
+                            weekday_month_valid = not template.weekday_month or day == firstweekday(template.weekday, first_day_of_month.isoweekday()) + (7 * (template.weekday_month -1))
+
+                            if weekday_month_valid: 
+                                dates[year][month][day] = collections.OrderedDict()
 
 
         # add hours
