@@ -98,6 +98,7 @@ class RecurringTask(poobrains.commenting.Commentable):
         (11, 'November'),
         (12, 'December')
     ])
+    weeks = poobrains.storage.fields.IntegerField(null=True, help_text="Every n weeks after creation.")
     weekday_month = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[(None, 'Any')] + [(x, x) for x in range(1,7)])
     weekday = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
         (None, 'Any'),
@@ -251,6 +252,8 @@ def create_recurring():
                             continue # means we have an invalid date on our hands, skip to next iteration of the loop
 
                         #weekday_distance = template.weekday - first_day_of_month.isoweekday()
+
+                        week_valid = not template.weeks or  
 
                         weekday_valid = not template.weekday or dt.isoweekday() == template.weekday
 
