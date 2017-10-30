@@ -8,6 +8,7 @@ import collections
 import datetime
 import calendar
 import click
+import flask
 import poobrains
 
 app = poobrains.app
@@ -35,7 +36,10 @@ class TaskForm(poobrains.form.AddForm):
     def __init__(self, model_or_instance, **kwargs):
 
         super(TaskForm, self).__init__(model_or_instance, **kwargs)
-        self.dependencies = poobrains.form.fields.MultiChoice(type=poobrains.form.types.StorableInstanceParamType(Task))
+        choices = []
+        for task in Task.list('read', flask.g.user):
+            choices.append((task, task.title))
+        self.dependencies = poobrains.form.fields.Select(type=poobrains.form.types.StorableInstanceParamType(Task), multi=True, choices=choices)
 
 
 class Task(poobrains.commenting.Commentable):
