@@ -225,9 +225,20 @@ def create_recurring():
                     
                     valid = valid and (not template.weekday or datetime.datetime(year, month, template.day).isoweekday() == template.weekday) # check if the date has the correct weekday
                     valid = valid and (not template.weekday_month or day == firstweekday(template.weekday, first_day_of_month.isoweekday()) + (7 * (template.weekday_month -1))) # check if date has correct'th number of weekday occurence in this month (2nd friday or whatev)
+
+                    week_valid = False 
+                    if template.weeks:
+                        base_monday = datetime.datetime(year=base_date.year, month=base_date.month, day=base_date.day - base_date.weekday())
+                        current_monday = dt - datetime.timedelta(days=dt.weekday())
+
+                        delta = current_monday - base_monday
+                        if delta.days % (7 * template.weeks) == 0:
+                            week_valid = True
+                    else:
+                        week_valid = True
                 
                     #if (first_year_valid or middle_year_valid or last_year_valid) and weekday_valid:
-                    if valid:
+                    if valid and week_valid:
                         dates[year][month][template.day] = collections.OrderedDict()
 
                 else:
@@ -253,11 +264,20 @@ def create_recurring():
 
                         #weekday_distance = template.weekday - first_day_of_month.isoweekday()
 
-                        week_valid = not template.weeks or  
+                        week_valid = False 
+                        if template.weeks:
+                            base_monday = datetime.datetime(year=base_date.year, month=base_date.month, day=base_date.day - base_date.weekday())
+                            current_monday = dt - datetime.timedelta(days=dt.weekday())
+
+                            delta = current_monday - base_monday
+                            if delta.days % (7 * template.weeks) == 0:
+                                week_valid = True
+                        else:
+                            week_valid = True
 
                         weekday_valid = not template.weekday or dt.isoweekday() == template.weekday
 
-                        if weekday_valid:
+                        if week_valid and weekday_valid:
                             #weekday_month_valid = not template.weekday_month or (day + weekday_distance) / 7.0 == template.weekday_month - 1
                             weekday_month_valid = not template.weekday_month or day == firstweekday(template.weekday, first_day_of_month.isoweekday()) + (7 * (template.weekday_month -1))
 
