@@ -39,15 +39,41 @@ class TaskForm(poobrains.form.AddForm):
         choices = []
         for task in Task.list('read', flask.g.user):
             choices.append((task, task.title))
-        self.dependencies = poobrains.form.fields.Select(type=poobrains.form.types.StorableInstanceParamType(Task), multi=True, choices=choices)
+        dep_value = [x.dependency for x in self.instance.dependencies]
+        self.dependencies = poobrains.form.fields.Select(type=poobrains.form.types.StorableInstanceParamType(Task), multi=True, choices=choices, value=dep_value)
 
 
+    def process(self, submit):
+
+        super(TaskForm, self).process(submit)
+
+        if submit == 'submit':
+
+            dependencies = self.fields['dependencies'].value
+
+            TaskDependency.delete().where(TaskDependency.task == self.instance).execute()
+
+            try:
+                for dependency in dependencies:
+                    newdep = TaskDependency()
+                    newdep.task = self.instance
+                    newdep.dependency = dependency
+                    newdep.save(force_insert=True)
+
+            except poobrains.storage.IntegrityError:
+                poobrains.flash("At least have the decency to build an indirect loop!")
+
+        return self
+
+
+@app.expose('/task', force_secure=True)
 class Task(poobrains.commenting.Commentable):
 
     class Meta:
         order_by = ('-created', '-priority', 'checkdate')
 
     form_add = TaskForm
+    form_edit = TaskForm
 
     created = poobrains.storage.fields.DateTimeField(default=datetime.datetime.now)
     title = poobrains.storage.fields.CharField()
@@ -123,6 +149,10 @@ class RecurringTask(poobrains.commenting.Commentable):
 
 class TaskDependency(poobrains.storage.Model):
 
+    class Meta:
+        order_by = ['task']
+        primary_key = poobrains.storage.CompositeKey('task', 'dependency')
+
     task = poobrains.storage.fields.ForeignKeyField(Task, related_name='dependencies')
     dependency = poobrains.storage.fields.ForeignKeyField(Task, related_name='provides', constraints=[poobrains.storage.fields.Check('dependency_id <> task_id')])
 
@@ -131,6 +161,7 @@ class Reward(poobrains.commenting.Commentable):
 
     title = poobrains.storage.fields.CharField()
     description = poobrains.md.MarkdownField(null=True)
+
 
 @app.cron
 def create_recurring():
