@@ -97,6 +97,25 @@ class Task(poobrains.commenting.Commentable):
         poobrains.storage.fields.Check('progress <= 100')
     ])
     description = poobrains.md.MarkdownField()
+    reward_served = poobrains.storage.fields.BooleanField(default=False)
+
+
+    def validate(self):
+        pass # FIXME/TODO: dependency resolution
+
+    def save(self, **kwargs):
+
+        if self._get_pk_value() and not self.reward_served and self.status == 'finished': # FIXME: _get_pk_value is an ugly hack to determin if we're editing or adding but peewee didn't offer anything better last i checked
+
+            reward_token = RewardToken()
+            reward_token.task = self
+            reward_token.owner = self.owner
+            reward_token.group = self.group
+            reward_token.save(force_insert=True)
+
+            self.reward_served = True
+
+        return super(Task, self).save(**kwargs)
 
 
 class RecurringTask(poobrains.commenting.Commentable):
@@ -161,6 +180,45 @@ class Reward(poobrains.commenting.Commentable):
 
     title = poobrains.storage.fields.CharField()
     description = poobrains.md.MarkdownField(null=True)
+
+
+class RewardToken(poobrains.auth.Administerable):
+
+    task = poobrains.storage.fields.ForeignKeyField(Task)
+    reward = poobrains.storage.fields.ForeignKeyField(Reward, null=True)
+
+
+    def save(self, **kwargs):
+
+        rv = super(RewardToken, self).save(**kwargs)
+
+        if not len(self.reward_choices):
+
+            for reward in Reward.select().order_by(poobrains.storage.fn.Random()).limit(5):
+
+                choice = RewardTokenChoice()
+                choice.token = self
+                choice.reward = reward
+                choice.save(force_insert=True)
+
+        return rv
+
+
+    def redeem(self, reward):
+
+        self.reward = reward
+        self.save()
+
+
+class RewardTokenChoice(poobrains.storage.Model):
+
+    class Meta:
+
+        primary_key = poobrains.storage.CompositeKey('token', 'reward')
+        order_by = ['token', 'reward']
+
+    token = poobrains.storage.fields.ForeignKeyField(RewardToken, related_name='reward_choices')
+    reward = poobrains.storage.fields.ForeignKeyField(Reward)
 
 
 @app.cron
