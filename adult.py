@@ -39,13 +39,13 @@ class TaskForm(poobrains.form.AddForm):
         choices = []
         for task in Task.list('read', flask.g.user):
             choices.append((task, task.title))
-        dep_value = [x.dependency for x in self.instance.dependencies]
+        dep_value = [x.dependency for x in self.instance.task_dependencies]
         self.dependencies = poobrains.form.fields.Select(type=poobrains.form.types.StorableInstanceParamType(Task), multi=True, choices=choices, value=dep_value)
 
 
     def process(self, submit):
 
-        super(TaskForm, self).process(submit)
+        r = super(TaskForm, self).process(submit)
 
         if submit == 'submit':
 
@@ -63,14 +63,14 @@ class TaskForm(poobrains.form.AddForm):
             except poobrains.storage.IntegrityError:
                 poobrains.flash("At least have the decency to build an indirect loop!")
 
-        return self
+        return r
 
 
 @app.expose('/task', force_secure=True)
 class Task(poobrains.commenting.Commentable):
 
     class Meta:
-        order_by = ('-created', '-priority', 'checkdate')
+        order_by = ('checkdate', '-priority', '-created')
 
     form_add = TaskForm
     form_edit = TaskForm
@@ -100,12 +100,25 @@ class Task(poobrains.commenting.Commentable):
     reward_served = poobrains.storage.fields.BooleanField(default=False)
 
 
+    @property
+    def priority_label(self):
+
+        """ gives the choice of the currently set priority """
+
+        return dict(self.__class__.priority.choices)[self.priority]
+
+
+    @property
+    def priority_css(self):
+        return self.priority_label.lower().replace(' ', '-')
+
+
     def validate(self):
         pass # FIXME/TODO: dependency resolution
 
     def save(self, **kwargs):
 
-        if self._get_pk_value() and not self.reward_served and self.status == 'finished': # FIXME: _get_pk_value is an ugly hack to determin if we're editing or adding but peewee didn't offer anything better last i checked
+        if self._pk and not self.reward_served and self.status == 'finished': # FIXME: _pk is an ugly hack to determin if we're editing or adding but peewee didn't offer anything better last i checked
 
             reward_token = RewardToken()
             reward_token.task = self
@@ -116,6 +129,36 @@ class Task(poobrains.commenting.Commentable):
             self.reward_served = True
 
         return super(Task, self).save(**kwargs)
+
+    @classmethod
+    def class_tree(cls, root=None, current_depth=0):
+       
+        if current_depth == 0:
+            tree = poobrains.rendering.Tree(root=poobrains.rendering.RenderString(root.title), mode='inline')
+        else:
+            tree = poobrains.rendering.Tree(root=root, mode='inline')
+
+        if current_depth > 100:
+
+            if root:
+                message = "Possibly incestuous tag: '%s'."  % root.name
+            else:
+                message = "Possibly incestuous tag, but don't have a root for this tree. Are you fucking with current_depth manually?"
+
+            app.logger.error(message)
+            return tree 
+
+        deps = TaskDependency.select().where(TaskDependency.task == root)
+
+        for dep in deps:
+            tree.children.append(dep.dependency.tree(current_depth=current_depth+1))
+
+        return tree
+
+
+    def tree(self, current_depth=0):
+
+        return self.__class__.class_tree(root=self, current_depth=current_depth)
 
 
 class RecurringTask(poobrains.commenting.Commentable):
@@ -172,20 +215,72 @@ class TaskDependency(poobrains.storage.Model):
         order_by = ['task']
         primary_key = poobrains.storage.CompositeKey('task', 'dependency')
 
-    task = poobrains.storage.fields.ForeignKeyField(Task, related_name='dependencies')
+    task = poobrains.storage.fields.ForeignKeyField(Task, related_name='task_dependencies')
     dependency = poobrains.storage.fields.ForeignKeyField(Task, related_name='provides', constraints=[poobrains.storage.fields.Check('dependency_id <> task_id')])
 
 
+@app.expose('/rewards/', mode='full')
 class Reward(poobrains.commenting.Commentable):
 
     title = poobrains.storage.fields.CharField()
     description = poobrains.md.MarkdownField(null=True)
 
 
+class RedeemForm(poobrains.auth.BoundForm):
+
+    title = "Redeem a token"
+
+    def __init__(self, *args, **kwargs):
+        
+        super(RedeemForm, self).__init__(*args, **kwargs)
+
+        choices = []
+        for choice in self.instance.reward_choices:
+            choices.append((choice.reward, choice.reward.render('inline')))
+
+        self.reward = poobrains.form.fields.Radio(choices=choices, type=poobrains.form.types.StorableInstanceParamType(Reward))
+        self.submit = poobrains.form.Button(type='submit', label=u'🍰')
+
+
+    def process(self, *args, **kwargs):
+
+        app.debugger.set_trace()
+
+        reward = self.fields['reward'].value
+
+        if reward:
+
+            self.instance.reward = reward
+            self.instance.redeemed = True
+            self.instance.save()
+
+            poobrains.flash("Token redeemed, enjoy your reward now! :)")
+            return poobrains.redirect(reward.url('full'))
+
+        flash(u"The cake might be a lie. 🤔", 'error')
+        return self
+
+
+@app.expose('/tokens/', mode='redeem')
 class RewardToken(poobrains.auth.Administerable):
 
     task = poobrains.storage.fields.ForeignKeyField(Task)
     reward = poobrains.storage.fields.ForeignKeyField(Reward, null=True)
+    redeemed = poobrains.storage.fields.BooleanField(default=False)
+
+    form_redeem = RedeemForm # tells self.form to use RedeemForm for mode 'redeem' updates
+
+    class Meta:
+
+        modes = collections.OrderedDict([
+            ('add', 'create'),
+            ('teaser', 'read'),
+            ('inline', 'read'),
+            ('full', 'read'),
+            ('edit', 'update'),
+            ('delete', 'delete'),
+            ('redeem', 'update')
+        ])
 
 
     def save(self, **kwargs):
@@ -219,6 +314,37 @@ class RewardTokenChoice(poobrains.storage.Model):
 
     token = poobrains.storage.fields.ForeignKeyField(RewardToken, related_name='reward_choices')
     reward = poobrains.storage.fields.ForeignKeyField(Reward)
+
+
+class TaskControl(poobrains.auth.Protected):
+
+    user = None
+
+    def __init__(self, handle=None, **kwargs):
+
+        super(TaskControl, self).__init__(**kwargs)
+        self.user = poobrains.auth.User.load(handle)
+
+
+    def view(self, handle=None, offset=0, **kwargs):
+
+        super(TaskControl, self).view(handle=handle, **kwargs) # checks permissions
+        u = poobrains.auth.User.load(handle)
+
+        q = Task.list('read', poobrains.g.user).where(Task.owner == u, Task.status != 'aborted', Task.status != 'finished').order_by(Task.priority.desc(), Task.checkdate.desc(), Task.created, Task.title)
+
+        listing = poobrains.storage.Listing(Task, title="Your goals", query=q, offset=offset, pagination_options={'handle': handle})
+
+        return listing.view(**kwargs)
+
+app.site.add_view(TaskControl, '/~<handle>/tasks/', mode='full', endpoint='taskcontrol_handle')
+app.site.add_view(TaskControl, '/~<handle>/tasks/+<int:offset>', mode='full', endpoint='taskcontrol_handle_offset')
+
+
+@app.route('/')
+def front():
+
+    return poobrains.redirect(TaskControl.url(handle=poobrains.g.user.name, mode='full'))
 
 
 @app.cron

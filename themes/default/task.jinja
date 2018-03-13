@@ -1,13 +1,35 @@
 {% extends "commentable.jinja" %}
 
-{% block header %}
-    {{ super() }}
-    <div class="header-meta">
-        <span>Priority: {{ content.priority }}</span>
-        <span>Timeframe: {{ content.checkdate }}</span>
+{% block header %}{% endblock %}
+
+{% block content %}
+
+    <div class="meta">
+        {% if mode != 'full' %}
+            <span class="title">{{ content.render('inline') }}</span>
+        {% endif %}
+        <span class="priority-wrapper">Priority: <span class="priority {{ content.priority_css }}">{{ content.priority_label }}</span></span>
+        <span class="checkdate">{{ content.checkdate}}</span>
+        <span class="progress">{{ content.progress }}% finished</span>
     </div>
+
+    {% with tree = content.tree() %}
+        {% if tree.children|length %}
+            <div class="dependency-tree">
+                <h5>Dependencies</h5>
+                {{ tree.render() }}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if mode == 'full' %}
+       {{ content.description.render() }}
+    {% endif %}
+
 {% endblock %}
 
-{% block content %}{{ content.description.render() }}{% endblock %}
-
-{% block footer %}{{ content.created }}{{ super() }}{% endblock %}
+{% block footer %}
+    {% if mode == 'full' %}
+        {{ content.created }}{{ super() }}
+    {% endif %}
+{% endblock %}

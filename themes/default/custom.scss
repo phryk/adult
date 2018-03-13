@@ -1,0 +1,56 @@
+article > header div.header-meta {
+    color: $color_font_dark;
+}
+
+
+$prio_count: 6;
+$palette_prio: ();
+$step: (hue($color_danger) - hue($color_highlight)) / ($prio_count - 1);
+
+
+@for $i from 0 through $prio_count - 1 {
+
+       $palette_prio: append($palette_prio, adjust_hue($color_highlight, $step * $i));
+}
+
+article.content-type-task {
+
+
+    div.meta {
+
+        span {
+
+            line-height: 1.5em;
+
+            &.priority {
+
+                padding: 0.25rem;
+
+                &.none {
+                    background: nth($palette_prio, 1);
+                }
+
+                &.very-low {
+                    background: nth($palette_prio, 2);
+                }
+
+                &.low {
+                    background: nth($palette_prio, 3);
+                }
+
+                &.normal {
+                    background: nth($palette_prio, 4);
+                }
+
+                &.high {
+                    background: nth($palette_prio, 5);
+                }
+
+                &.very-high {
+                    background: nth($palette_prio, 6);
+                    font-weight: bold;
+                }
+            }
+        }
+    }
+}
