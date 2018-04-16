@@ -89,6 +89,7 @@ class Task(poobrains.commenting.Commentable):
     status = poobrains.storage.fields.CharField(default='new', form_widget=poobrains.form.fields.Select, choices=[
         ('new', 'new'),
         ('ongoing', 'ongoing'),
+        ('testing', 'testing'),
         ('finished', 'finished'),
         ('aborted', 'aborted')
     ])
@@ -319,23 +320,36 @@ class RewardTokenChoice(poobrains.storage.Model):
 class TaskControl(poobrains.auth.Protected):
 
     user = None
+    new = None
+    ongoing = None
+    testing = None
+    finished = None
+    aborted = None
 
     def __init__(self, handle=None, **kwargs):
 
         super(TaskControl, self).__init__(**kwargs)
         self.user = poobrains.auth.User.load(handle)
 
+        base_query = Task.list('read', poobrains.g.user).where(Task.owner == self.user)
+        self.new = base_query.where(Task.status == 'new')
+        self.ongoing = base_query.where(Task.status == 'ongoing')
+        self.testing = base_query.where(Task.status == 'testing')
+        self.finished = base_query.where(Task.status == 'finished')
+        self.aborted = base_query.where(Task.status == 'aborted')
 
-    def view(self, handle=None, offset=0, **kwargs):
 
-        super(TaskControl, self).view(handle=handle, **kwargs) # checks permissions
-        u = poobrains.auth.User.load(handle)
 
-        q = Task.list('read', poobrains.g.user).where(Task.owner == u, Task.status != 'aborted', Task.status != 'finished').order_by(Task.priority.desc(), Task.checkdate.desc(), Task.created, Task.title)
-
-        listing = poobrains.storage.Listing(Task, title="Your goals", query=q, offset=offset, pagination_options={'handle': handle})
-
-        return listing.view(**kwargs)
+#    def view(self, handle=None, offset=0, **kwargs):
+#
+#        super(TaskControl, self).view(handle=handle, **kwargs) # checks permissions
+#        u = poobrains.auth.User.load(handle)
+#
+#        q = Task.list('read', poobrains.g.user).where(Task.owner == u, Task.status != 'aborted', Task.status != 'finished').order_by(Task.priority.desc(), Task.checkdate.desc(), Task.created, Task.title)
+#
+#        listing = poobrains.storage.Listing(Task, title="Your goals", query=q, offset=offset, pagination_options={'handle': handle})
+#
+#        return listing.view(**kwargs)
 
 app.site.add_view(TaskControl, '/~<handle>/tasks/', mode='full', endpoint='taskcontrol_handle')
 app.site.add_view(TaskControl, '/~<handle>/tasks/+<int:offset>', mode='full', endpoint='taskcontrol_handle_offset')

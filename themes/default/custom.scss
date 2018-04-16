@@ -54,3 +54,13 @@ article.content-type-task {
         }
     }
 }
+
+.flex-columns {
+
+    display: flex;
+    flex-direction: row;
+
+    .column {
+
+    }
+}

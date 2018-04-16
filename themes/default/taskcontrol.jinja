@@ -1,0 +1,43 @@
+{% extends "renderable.jinja" %}
+
+{% block content %}
+
+    <div class="flex-columns">
+
+        <div class="column new">
+            <h3>New</h3>
+            {% for task in content.new %}
+                {{ task.render('teaser') }}
+            {% endfor %}
+        </div>
+
+        <div class="column ongoing">
+            <h3>Ongoing</h3>
+            {% for task in content.ongoing %}
+                {{ task.render('teaser') }}
+            {% endfor %}
+        </div>
+
+        <div class="column testing">
+            <h3>Testing</h3>
+            {% for task in content.testing %}
+                {{ task.render('teaser') }}
+            {% endfor %}
+        </div>
+
+        <div class="column finished">
+            <h3>Finished</h3>
+            {% for task in content.finished %}
+                {{ task.render('teaser') }}
+            {% endfor %}
+        </div>
+
+        <div class="column aborted">
+            <h3>Aborted</h3>
+            {% for task in content.aborted %}
+                {{ task.render('teaser') }}
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}
