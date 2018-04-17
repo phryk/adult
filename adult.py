@@ -89,7 +89,6 @@ class Task(poobrains.commenting.Commentable):
     status = poobrains.storage.fields.CharField(default='new', form_widget=poobrains.form.fields.Select, choices=[
         ('new', 'new'),
         ('ongoing', 'ongoing'),
-        ('testing', 'testing'),
         ('finished', 'finished'),
         ('aborted', 'aborted')
     ])
@@ -322,7 +321,6 @@ class TaskControl(poobrains.auth.Protected):
     user = None
     new = None
     ongoing = None
-    testing = None
     finished = None
     aborted = None
 
@@ -334,7 +332,6 @@ class TaskControl(poobrains.auth.Protected):
         base_query = Task.list('read', poobrains.g.user).where(Task.owner == self.user)
         self.new = base_query.where(Task.status == 'new')
         self.ongoing = base_query.where(Task.status == 'ongoing')
-        self.testing = base_query.where(Task.status == 'testing')
         self.finished = base_query.where(Task.status == 'finished')
         self.aborted = base_query.where(Task.status == 'aborted')
 
