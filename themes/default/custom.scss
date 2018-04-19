@@ -100,7 +100,7 @@ article.content-type-task {
             margin-bottom: 0.5rem;
 
             & > .content {
-                background: transparent;
+                background: opacify($color_background_light, -75%);
                 padding: 0.5rem;
             }
 
