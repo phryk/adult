@@ -70,12 +70,11 @@ class TaskForm(poobrains.form.AddForm):
 class Task(poobrains.commenting.Commentable):
 
     class Meta:
-        order_by = ('checkdate', '-priority', '-created')
+        order_by = ('checkdate', '-priority', '-date')
 
     form_add = TaskForm
     form_edit = TaskForm
 
-    created = poobrains.storage.fields.DateTimeField(default=datetime.datetime.now)
     title = poobrains.storage.fields.CharField()
     checkdate = poobrains.storage.fields.DateTimeField(default=tomorrow, null=True)
     priority = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
@@ -101,6 +100,25 @@ class Task(poobrains.commenting.Commentable):
 
 
     @property
+    def css_class(self):
+
+        classes = []
+        classes.append(self.priority_css)
+
+        if isinstance(self.checkdate, datetime.datetime):
+
+            now = datetime.datetime.now()
+
+            if self.checkdate < now:
+                classes.append('checkdate-passed')
+
+            elif self.checkdate - datetime.timedelta(days=1) < now: # checkdate within the next 24h
+                classes.append('checkdate-24h')
+
+        return ' '.join(classes)
+
+
+    @property
     def priority_label(self):
 
         """ gives the choice of the currently set priority """
@@ -110,7 +128,12 @@ class Task(poobrains.commenting.Commentable):
 
     @property
     def priority_css(self):
-        return self.priority_label.lower().replace(' ', '-')
+        return 'priority-%s' % self.priority_label.lower().replace(' ', '-')
+
+
+    @property
+    def progress_svg(self):
+        return Progress(handle=self.progress).url('raw')
 
 
     def validate(self):
@@ -141,9 +164,9 @@ class Task(poobrains.commenting.Commentable):
         if current_depth > 100:
 
             if root:
-                message = "Possibly incestuous tag: '%s'."  % root.name
+                message = "Possible loop in dependencies of Task:'%s'."  % root.name
             else:
-                message = "Possibly incestuous tag, but don't have a root for this tree. Are you fucking with current_depth manually?"
+                message = "Possible loop in dependencies of a Task but don't have a root for this tree. Are you fucking with current_depth manually?"
 
             app.logger.error(message)
             return tree 
@@ -163,7 +186,6 @@ class Task(poobrains.commenting.Commentable):
 
 class RecurringTask(poobrains.commenting.Commentable):
 
-    created = poobrains.storage.fields.DateTimeField(default=datetime.datetime.now)
     title = poobrains.storage.fields.CharField()
     checkdate = poobrains.storage.fields.IntegerField(null=True, help_text='Time frame in seconds')
     priority = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
@@ -332,7 +354,7 @@ class TaskControl(poobrains.auth.Protected):
         base_query = Task.list('read', poobrains.g.user).where(Task.owner == self.user)
         self.new = base_query.where(Task.status == 'new')
         self.ongoing = base_query.where(Task.status == 'ongoing')
-        self.finished = base_query.where(Task.status == 'finished')
+        self.finished = base_query.where(Task.status == 'finished', Task.checkdate > datetime.datetime.now())
         self.aborted = base_query.where(Task.status == 'aborted')
 
 
@@ -352,6 +374,24 @@ app.site.add_view(TaskControl, '/~<handle>/tasks/', mode='full', endpoint='taskc
 app.site.add_view(TaskControl, '/~<handle>/tasks/+<int:offset>', mode='full', endpoint='taskcontrol_handle_offset')
 
 
+@app.expose('/svg/progress')
+class Progress(poobrains.svg.SVG):
+
+    width = '100%'
+    height = '20px'
+
+    @property
+    def percent(self):
+        return int(self.handle)
+
+    def view(self, mode=None, handle=None, **kwargs):
+        
+        try:
+            self.percent # makes sure handle makes sense
+            return super(Progress, self).view(mode=mode, handle=handle, **kwargs)
+        except TypeError:
+            abort(400, 'Progress value must be 0-100.')
+
 @app.route('/')
 def front():
 
@@ -369,12 +409,12 @@ def create_recurring():
         try:
 
             if template.latest_task:
-                base_date = template.latest_task.created
+                base_date = template.latest_task.date
             else: # for some reason this can be None without triggering Task.DoesNotExist
-                base_date = template.created
+                base_date = template.date
 
         except Task.DoesNotExist:
-            base_date = template.created
+            base_date = template.date
 
 
         dates = collections.OrderedDict()
@@ -624,7 +664,7 @@ def create_recurring():
                 task.group = template.group
                 task.status = 'new'
                 task.title = template.title
-                task.created = date
+                task.date = date
                 if template.checkdate:
                     task.checkdate = date + datetime.timedelta(seconds=template.checkdate)
                 task.priority = template.priority

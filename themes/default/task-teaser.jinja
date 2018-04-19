@@ -5,12 +5,13 @@
 {% block content %}
 
     <div class="meta">
-        {% if mode != 'full' %}
-            <span class="title">{{ content.render('inline') }}</span>
-        {% endif %}
+        <span class="title">{{ content.render('inline') }}</span>
         <span class="priority-wrapper">Priority: <span class="priority {{ content.priority_css }}">{{ content.priority_label }}</span></span>
         <span class="checkdate">{{ content.checkdate}}</span>
-        <span class="progress">{{ content.progress }}% finished</span>
+        <span class="progress">
+            <object data="{{ content.progress_svg }}" /></object>
+            {{ content.progress }}% finished
+        </span>
     </div>
 
     {% with tree = content.tree() %}
@@ -22,8 +23,6 @@
         {% endif %}
     {% endwith %}
 
-    {% if mode == 'full' %}
-       {{ content.description.render() }}
-    {% endif %}
-
 {% endblock %}
+
+{% block footer %}{% endblock %}

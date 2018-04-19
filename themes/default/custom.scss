@@ -15,6 +15,33 @@ $step: (hue($color_danger) - hue($color_highlight)) / ($prio_count - 1);
 
 article.content-type-task {
 
+    &.mode-teaser {
+
+        &.priority-none {
+            border-left: 0.25rem solid nth($palette_prio, 1);
+        }
+
+        &.priority-very-low {
+            border-left: 0.25rem solid nth($palette_prio, 2);
+        }
+
+        &.priority-low {
+            border-left: 0.25rem solid nth($palette_prio, 3);
+        }
+
+        &.priority-normal {
+            border-left: 0.25rem solid nth($palette_prio, 4);
+        }
+
+        &.priority-high {
+            border-left: 0.25rem solid nth($palette_prio, 5);
+        }
+
+        &.priority-very-high {
+            border-left: 0.25rem solid nth($palette_prio, 6);
+        }
+    }
+
 
     div.meta {
 
@@ -26,27 +53,27 @@ article.content-type-task {
 
                 padding: 0.25rem;
 
-                &.none {
+                &.priority-none {
                     background: nth($palette_prio, 1);
                 }
 
-                &.very-low {
+                &.priority-very-low {
                     background: nth($palette_prio, 2);
                 }
 
-                &.low {
+                &.priority-low {
                     background: nth($palette_prio, 3);
                 }
 
-                &.normal {
+                &.priority-normal {
                     background: nth($palette_prio, 4);
                 }
 
-                &.high {
+                &.priority-high {
                     background: nth($palette_prio, 5);
                 }
 
-                &.very-high {
+                &.priority-very-high {
                     background: nth($palette_prio, 6);
                     font-weight: bold;
                 }
@@ -61,6 +88,30 @@ article.content-type-task {
     flex-direction: row;
 
     .column {
+
+        margin-right: 0.5rem;
+
+        &:last-child {
+            margin-right: 0;
+        }
+
+        & > article {
+
+            margin-bottom: 0.5rem;
+
+            & > .content {
+                background: transparent;
+                padding: 0.5rem;
+            }
+
+            &.checkdate-passed > .content {
+                background: opacify($color_danger, -70%);
+            }
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
 
     }
 }

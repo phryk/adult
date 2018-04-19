@@ -1,0 +1,10 @@
+.progress-line {
+
+    stroke: $color_font_light;
+    stroke-width: 2px;
+
+    &.pre {
+        stroke: $color_highlight;
+        stroke-width: 4px;
+    }
+}
