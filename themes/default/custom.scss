@@ -78,6 +78,16 @@ article.content-type-task {
                     font-weight: bold;
                 }
             }
+
+            &.checkdate {
+                &.checkdate-passed {
+                    font-weight: bold;
+                    color: $color_danger;
+                }
+                &.checkdate-24h {
+                    color: $color_highlight;
+                }
+            }
         }
     }
 }
@@ -108,10 +118,25 @@ article.content-type-task {
                 background: opacify($color_danger, -70%);
             }
 
+            &.checkdate-24h > .content {
+                background: opacify($color_highlight, -70%);
+            }
+
             &:last-child {
                 margin-bottom: 0;
             }
         }
 
+    }
+}
+
+.teaser-link {
+
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+        color: $color_font_light;
+        text-shadow: 0 0 0.1rem $color_highlight, 0 0 1rem $color_highlight;
     }
 }

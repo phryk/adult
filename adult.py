@@ -103,19 +103,26 @@ class Task(poobrains.commenting.Commentable):
     def css_class(self):
 
         classes = []
+        classes.append(self.checkdate_css)
         classes.append(self.priority_css)
 
+
+        return ' '.join(classes)
+
+
+    @property
+    def checkdate_css(self):
         if isinstance(self.checkdate, datetime.datetime):
 
             now = datetime.datetime.now()
 
             if self.checkdate < now:
-                classes.append('checkdate-passed')
+                return 'checkdate-passed'
 
             elif self.checkdate - datetime.timedelta(days=1) < now: # checkdate within the next 24h
-                classes.append('checkdate-24h')
+                return 'checkdate-24h'
 
-        return ' '.join(classes)
+            return ''
 
 
     @property

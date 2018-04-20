@@ -4,15 +4,17 @@
 
 {% block content %}
 
-    <div class="meta">
-        <span class="title">{{ content.render('inline') }}</span>
-        <span class="priority-wrapper">Priority: <span class="priority {{ content.priority_css }}">{{ content.priority_label }}</span></span>
-        <span class="checkdate">{{ content.checkdate}}</span>
-        <span class="progress">
-            <object data="{{ content.progress_svg }}" /></object>
-            {{ content.progress }}% finished
-        </span>
-    </div>
+    <a class="teaser-link" href="{{ content.url('full') }}">
+        <div class="meta">
+            <span class="title">{{ content.title }}</span>
+            <span class="priority-wrapper">Priority: <span class="priority {{ content.priority_css }}">{{ content.priority_label }}</span></span>
+            <span class="checkdate {{ content.checkdate_css }}">{{ content.checkdate}}</span>
+            <span class="progress">
+                <object data="{{ content.progress_svg }}" /></object>
+                {{ content.progress }}% finished
+            </span>
+        </div>
+    </a>
 
     {% with tree = content.tree() %}
         {% if tree.children|length %}
