@@ -5,13 +5,10 @@
 {% block content %}
 
     <a class="teaser-link" href="{{ content.url('full') }}">
-        <div class="meta">
-            <div class="title">{{ content.title }}</div>
-            <div class="progress">
-                <div class="progress-bar">{{ content.progress_svg }}</div>
-                {{ content.progress }}% finished
-            </div>
-            <div class="checkdate {{ content.checkdate_css }}">{{ content.checkdate}}</div>
+        <h4 class="title">{{ content.title }}</h4>
+        <div class="progress">
+            <div class="progress-bar">{{ content.progress_svg }}</div>
+            {{ content.progress }}% finished
         </div>
     </a>
 
@@ -22,6 +19,15 @@
             </div>
         {% endif %}
     {% endwith %}
+
+    <div class="tags">
+        {% for tag in content.tags %}
+            {{ tag.render('inline') }}
+            {% if not loop.last %},{% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="checkdate {{ content.checkdate_css }}">{{ content.checkdate}}</div>
 
 {% endblock %}
 
