@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    <a class="teaser-link" href="{{ content.url('full') }}">
+    <a class="teaser-link" href="{{ content.url('full') }}" title="{{ content.description|truncate }}">
         <h4 class="title">{{ content.title }}</h4>
         <div class="progress">
             <div class="progress-bar">{{ content.progress_svg }}</div>
@@ -20,11 +20,13 @@
         {% endif %}
     {% endwith %}
 
-    <div class="tags">
-        {% for tag in content.tags %}
-            {{ tag.render('inline') }}{% if not loop.last %},{% endif %}
-        {% endfor %}
-    </div>
+    {% if content.tags|length %}
+        <div class="tags">tagged:
+            {% for tag in content.tags %}
+                {{ tag.render('inline') }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
 
     <div class="checkdate {{ content.checkdate_css }}">{{ content.checkdate}}</div>
 

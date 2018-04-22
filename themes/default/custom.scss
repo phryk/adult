@@ -63,6 +63,10 @@ article.content-type-task {
             }
         }
 
+        .dependency-tree {
+            margin-bottom: 1rem;
+        }
+
         .tags {
             
             font-size: 80%;
@@ -162,6 +166,8 @@ article.content-type-task {
 
     margin-top: 1rem;
     text-align: left;
+    font-size: 80%;
+
 }
 
 .progress-bar {
