@@ -363,6 +363,10 @@ class TaskControl(poobrains.auth.Protected):
         self.aborted = base_query.where(Task.status == 'aborted')
 
 
+    @property
+    def title(self):
+        return "%s's goals" % self.user.name
+
 
 #    def view(self, handle=None, offset=0, **kwargs):
 #
