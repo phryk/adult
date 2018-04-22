@@ -365,7 +365,7 @@ class TaskControl(poobrains.auth.Protected):
 
     @property
     def title(self):
-        return "%s's goals" % self.user.name
+        return "%ss goals" % self.user.name
 
 
 #    def view(self, handle=None, offset=0, **kwargs):
