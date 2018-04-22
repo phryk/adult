@@ -140,7 +140,7 @@ class Task(poobrains.commenting.Commentable):
 
     @property
     def progress_svg(self):
-        return Progress(handle=self.progress).url('raw')
+        return Progress(handle=self.progress).render('raw')
 
 
     def validate(self):
@@ -164,7 +164,7 @@ class Task(poobrains.commenting.Commentable):
     def class_tree(cls, root=None, current_depth=0):
        
         if current_depth == 0:
-            tree = poobrains.rendering.Tree(root=poobrains.rendering.RenderString(root.title), mode='inline')
+            tree = poobrains.rendering.Tree(root=poobrains.rendering.RenderString('dependencies'), mode='inline')
         else:
             tree = poobrains.rendering.Tree(root=root, mode='inline')
 
@@ -272,8 +272,6 @@ class RedeemForm(poobrains.auth.BoundForm):
 
 
     def process(self, *args, **kwargs):
-
-        app.debugger.set_trace()
 
         reward = self.fields['reward'].value
 

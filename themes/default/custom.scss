@@ -45,9 +45,14 @@ article.content-type-task {
 
     div.meta {
 
-        span {
+        div {
 
-            line-height: 1.5em;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+
+            &:last-child {
+                margin-bottom: 0;
+            }
 
             &.priority {
 
@@ -80,6 +85,11 @@ article.content-type-task {
             }
 
             &.checkdate {
+
+                margin-top: 1rem;
+                font-size: 70%;
+                text-align: right;
+
                 &.checkdate-passed {
                     font-weight: bold;
                     color: $color_danger;
@@ -99,6 +109,7 @@ article.content-type-task {
 
     .column {
 
+        flex-basis: 100%;
         margin-right: 0.5rem;
 
         &:last-child {
@@ -108,6 +119,7 @@ article.content-type-task {
         & > article {
 
             margin-bottom: 0.5rem;
+            text-align: center;
 
             & > .content {
                 background: opacify($color_background_light, -75%);
@@ -134,9 +146,29 @@ article.content-type-task {
 
     text-decoration: none;
 
+    div.title {
+        transition: text-shadow 0.3s linear;
+    }
+
     &:hover,
     &:focus {
+            
         color: $color_font_light;
-        text-shadow: 0 0 0.1rem $color_highlight, 0 0 1rem $color_highlight;
+
+        div.title {
+            text-shadow: 0 0 0.1rem $color_highlight, 0 0 1rem $color_highlight;
+        }
+    }
+}
+
+.dependency-tree {
+
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.progress-bar {
+    svg {
+        overflow: visible;
     }
 }
