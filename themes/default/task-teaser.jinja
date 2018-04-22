@@ -22,8 +22,7 @@
 
     <div class="tags">
         {% for tag in content.tags %}
-            {{ tag.render('inline') }}
-            {% if not loop.last %},{% endif %}
+            {{ tag.render('inline') }}{% if not loop.last %},{% endif %}
         {% endfor %}
     </div>
 

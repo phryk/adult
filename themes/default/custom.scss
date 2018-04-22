@@ -44,7 +44,9 @@ article.content-type-task {
 
         .teaser-link {
 
+            display: block;
             text-decoration: none;
+            margin-bottom: 1rem;
 
             .title {
                 transition: text-shadow 0.3s linear;
@@ -64,6 +66,7 @@ article.content-type-task {
         .tags {
             
             font-size: 80%;
+            text-align: left;
 
         }
 
