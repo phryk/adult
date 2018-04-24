@@ -355,6 +355,9 @@ class TaskControl(poobrains.auth.Protected):
 
         super(TaskControl, self).__init__(**kwargs)
         self.user = poobrains.auth.User.load(handle)
+        
+        self.menu_actions = poobrains.rendering.Menu('task-add')
+        self.menu_actions.append(Task.url('add'), 'Add new')
 
         base_query = Task.list('read', poobrains.g.user).where(Task.owner == self.user)
         self.new = base_query.where(Task.status == 'new')
