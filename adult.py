@@ -77,7 +77,7 @@ class Task(poobrains.commenting.Commentable):
 
     title = poobrains.storage.fields.CharField()
     checkdate = poobrains.storage.fields.DateTimeField(default=tomorrow, null=True)
-    priority = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
+    priority = poobrains.storage.fields.IntegerField(default=0, form_widget=poobrains.form.fields.Select, choices=[
         (None, 'None'),
         (-2, 'Very low'),
         (-1, 'Low'),
@@ -367,6 +367,12 @@ class TaskControl(poobrains.auth.Protected):
     def title(self):
         return "%ss goals" % self.user.name
 
+#    @property
+#    def menu_actions(self):
+#        m = poobrains.rendering.Menu('actions')
+#        m.append('#', poobrains.Markup('<span class="priority priority-very-low">vewy low</span>'))
+#
+#        return m
 
 #    def view(self, handle=None, offset=0, **kwargs):
 #

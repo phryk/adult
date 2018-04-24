@@ -3,7 +3,7 @@ article > header div.header-meta {
 }
 
 
-$prio_count: 6;
+$prio_count: 5;
 $palette_prio: ();
 $step: (hue($color_danger) - hue($color_highlight)) / ($prio_count - 1);
 
@@ -17,28 +17,24 @@ article.content-type-task {
 
     &.mode-teaser {
 
-        &.priority-none {
+        &.priority-very-low {
             border-left: 0.25rem solid nth($palette_prio, 1);
         }
 
-        &.priority-very-low {
+        &.priority-low {
             border-left: 0.25rem solid nth($palette_prio, 2);
         }
 
-        &.priority-low {
+        &.priority-normal {
             border-left: 0.25rem solid nth($palette_prio, 3);
         }
 
-        &.priority-normal {
+        &.priority-high {
             border-left: 0.25rem solid nth($palette_prio, 4);
         }
 
-        &.priority-high {
-            border-left: 0.25rem solid nth($palette_prio, 5);
-        }
-
         &.priority-very-high {
-            border-left: 0.25rem solid nth($palette_prio, 6);
+            border-left: 0.25rem solid nth($palette_prio, 5);
         }
 
 
@@ -92,35 +88,31 @@ article.content-type-task {
             }
         }
     }
+}
 
-    .priority {
+.priority {
 
-        padding: 0.25rem;
+    padding: 0.25rem;
 
-        &.priority-none {
-            background: nth($palette_prio, 1);
-        }
+    &.priority-very-low {
+        background: nth($palette_prio, 1);
+    }
 
-        &.priority-very-low {
-            background: nth($palette_prio, 2);
-        }
+    &.priority-low {
+        background: nth($palette_prio, 2);
+    }
 
-        &.priority-low {
-            background: nth($palette_prio, 3);
-        }
+    &.priority-normal {
+        background: nth($palette_prio, 3);
+    }
 
-        &.priority-normal {
-            background: nth($palette_prio, 4);
-        }
+    &.priority-high {
+        background: nth($palette_prio, 4);
+    }
 
-        &.priority-high {
-            background: nth($palette_prio, 5);
-        }
-
-        &.priority-very-high {
-            background: nth($palette_prio, 6);
-            font-weight: bold;
-        }
+    &.priority-very-high {
+        background: nth($palette_prio, 5);
+        font-weight: bold;
     }
 }
 
