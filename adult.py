@@ -78,7 +78,6 @@ class Task(poobrains.commenting.Commentable):
     title = poobrains.storage.fields.CharField()
     checkdate = poobrains.storage.fields.DateTimeField(default=tomorrow, null=True)
     priority = poobrains.storage.fields.IntegerField(default=0, form_widget=poobrains.form.fields.Select, choices=[
-        (None, 'None'),
         (-2, 'Very low'),
         (-1, 'Low'),
         (0, 'Normal'),
@@ -195,8 +194,7 @@ class RecurringTask(poobrains.commenting.Commentable):
 
     title = poobrains.storage.fields.CharField()
     checkdate = poobrains.storage.fields.IntegerField(null=True, help_text='Time frame in seconds')
-    priority = poobrains.storage.fields.IntegerField(null=True, form_widget=poobrains.form.fields.Select, choices=[
-        (None, 'None'),
+    priority = poobrains.storage.fields.IntegerField(form_widget=poobrains.form.fields.Select, choices=[
         (-2, 'Very low'),
         (-1, 'Low'),
         (0, 'Normal'),
